@@ -55,10 +55,10 @@ UNITS = [
 # -----------------------------
 # CONSTANT RULES
 # -----------------------------
-RULES = {
-    "Possible Prisoners": "Up to 100",
-    "Possible Patients": "Up to 100",
-    "Transport Probability": "Up to 80%",
-    "Hosp Department": "General Internal",
-    "Critical Care Quote": 0
-}
+RULES_TEXT = (
+    "- Possible Prisoners: Up to 100\n"
+    "- Possible Patients: Up to 100\n"
+    "- Transport Probability: 80%\n"
+    "- Hospital Department: General Internal\n"
+    "- Critical Care Quote: 0"
+)
