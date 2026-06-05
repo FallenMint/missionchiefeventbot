@@ -2,42 +2,40 @@ import discord
 from discord.ext import commands
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import random
-from dotenv import load_dotenv
 
-from config import TOKEN, CHANNEL_ID, UK_LOCATIONS, UNITS, EVENTS, RULES
+from config import TOKEN, CHANNEL_ID, UK_LOCATIONS, UNITS, EVENTS, RULES_TEXT
 
-load_dotenv()
 
+# -----------------------------
+# INTENTS (FIXS COMMAND WARNING)
+# -----------------------------
 intents = discord.Intents.default()
+intents.message_content = True
+
 bot = commands.Bot(command_prefix="!", intents=intents)
 scheduler = AsyncIOScheduler()
 
 
 # -----------------------------
-# SCENARIO SYSTEM (REALISM CORE)
+# SCENARIOS (REALISM)
 # -----------------------------
-
 SCENARIOS = [
-    "Multi-vehicle motorway collision with fire involvement",
-    "High-rise residential fire with entrapments",
-    "Gas main explosion in urban commercial district",
-    "Large stadium crowd disorder and medical incidents",
-    "Chemical plant leak with hazardous atmosphere",
-    "Severe flooding with multiple stranded casualties",
-    "Armed police response to active threat incident",
-    "Mass casualty train derailment",
-    "Warehouse fire with structural collapse risk",
-    "Public disorder following major event escalation",
-    "Storm damage leading to widespread emergency calls",
-    "Suspicious package / controlled evacuation scenario",
-    "Industrial accident involving heavy machinery failure"
+    "Multi-vehicle motorway collision with entrapment",
+    "High-rise residential fire with casualties",
+    "Gas main explosion in urban area",
+    "Large stadium crowd disorder incident",
+    "Chemical leak at industrial site",
+    "Severe flooding with stranded civilians",
+    "Armed response to active threat",
+    "Train derailment with mass casualties",
+    "Warehouse fire with collapse risk",
+    "Storm damage causing multiple emergencies"
 ]
 
 
 # -----------------------------
 # GENERATORS
 # -----------------------------
-
 def generate_mission():
     return {
         "name": random.choice(SCENARIOS),
@@ -47,20 +45,16 @@ def generate_mission():
 
 
 def generate_event():
-    event_type = random.choice(EVENTS)
-
     return {
-        "name": f"{event_type} Major Incident",
+        "name": f"{random.choice(EVENTS)} Major Incident",
         "location": random.choice(UK_LOCATIONS),
-        "event_type": event_type,
         "units": random.sample(UNITS, k=12)
     }
 
 
 # -----------------------------
-# MESSAGE FORMATTER
+# FORMATTERS
 # -----------------------------
-
 def format_mission(m):
     return (
         f"🚨 **LARGE SCALE MISSION** 🚨\n\n"
@@ -68,13 +62,7 @@ def format_mission(m):
         f"📍 Location: {m['location']}\n\n"
         f"🚒 Units Required:\n" +
         "\n".join(f"- {u}" for u in m['units']) +
-        "\n\n"
-        f"📊 Rules:\n"
-        f"- Patients: Up to 100\n"
-        f"- Prisoners: Up to 100\n"
-        f"- Transport Probability: 80%\n"
-        f"- Hospital Dept: General Internal\n"
-        f"- Critical Care Quote: 0"
+        f"\n\n📊 Rules:\n{RULES_TEXT}"
     )
 
 
@@ -83,7 +71,6 @@ def format_event(e):
         f"🌍 **WEEKLY MAJOR EVENT** 🌍\n\n"
         f"📛 Event: {e['name']}\n"
         f"📍 Location: {e['location']}\n\n"
-        f"📦 Type: {e['event_type']}\n"
         f"🟦 Area: Large Rectangular Operational Zone\n"
         f"⏱ Call Volume: 30 seconds\n\n"
         f"🚨 Units Required:\n" +
@@ -92,25 +79,25 @@ def format_event(e):
 
 
 # -----------------------------
-# DISCORD COMMANDS (TESTING)
+# TEST COMMANDS
 # -----------------------------
-
 @bot.command()
 async def test(ctx):
+    """Run a test mission"""
     m = generate_mission()
     await ctx.send(format_mission(m))
 
 
 @bot.command()
 async def testevent(ctx):
+    """Run a test event"""
     e = generate_event()
     await ctx.send(format_event(e))
 
 
 # -----------------------------
-# SCHEDULER
+# SCHEDULED TASKS
 # -----------------------------
-
 async def post_daily():
     channel = bot.get_channel(CHANNEL_ID)
     await channel.send(format_mission(generate_mission()))
@@ -132,7 +119,6 @@ async def on_ready():
 
 
 # -----------------------------
-# RUN
+# RUN BOT
 # -----------------------------
-
 bot.run(TOKEN)
