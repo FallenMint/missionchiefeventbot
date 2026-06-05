@@ -1,11 +1,43 @@
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
+
+# -----------------------
+# REQUIRED SETTINGS
+# -----------------------
 TOKEN = os.getenv("DISCORD_TOKEN")
-CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 
-# -----------------------------
-# EVENTS (weekly rotation)
-# -----------------------------
+CHANNEL_ID = os.getenv("CHANNEL_ID")
+
+if not TOKEN:
+    raise Exception("Missing DISCORD_TOKEN in .env")
+
+if not CHANNEL_ID:
+    raise Exception("Missing CHANNEL_ID in .env")
+
+CHANNEL_ID = int(CHANNEL_ID)
+
+
+# -----------------------
+# CONTENT DATA
+# -----------------------
+
+UK_LOCATIONS = [
+    "London",
+    "Birmingham",
+    "Manchester",
+    "Liverpool",
+    "Leeds",
+    "Sheffield",
+    "Bristol",
+    "Nottingham",
+    "Newcastle",
+    "Glasgow",
+    "Cardiff",
+    "Belfast",
+]
+
 EVENTS = [
     "Storm",
     "Section 60",
@@ -13,22 +45,9 @@ EVENTS = [
     "Autumn Weather",
     "Spring Weather",
     "Summer Weather",
-    "Sport Weather"
+    "Sport Weather",
 ]
 
-# -----------------------------
-# UK LOCATIONS
-# -----------------------------
-UK_LOCATIONS = [
-    "London", "Manchester", "Birmingham", "Liverpool",
-    "Leeds", "Bristol", "Glasgow", "Edinburgh",
-    "Cardiff", "Newcastle", "Sheffield", "Nottingham",
-    "Southampton", "Leicester", "Oxford", "Cambridge"
-]
-
-# -----------------------------
-# LARGE SCALE UNITS
-# -----------------------------
 UNITS = [
     "Fire Engines",
     "Aerial Appliance Trucks",
@@ -37,7 +56,7 @@ UNITS = [
     "BSU",
     "Hazmat",
     "Rescue Support",
-    "Foam",
+    "Foam Unit",
     "Police Cars",
     "Armed Response",
     "DSU",
@@ -48,17 +67,14 @@ UNITS = [
     "SRV",
     "Welfare",
     "ATV",
-    "Mass Casuality Equipment",
-    "Ambulance Officers"
+    "Mass Casualty Equipment",
+    "Ambulance Officers",
 ]
 
-# -----------------------------
-# CONSTANT RULES
-# -----------------------------
-RULES_TEXT = (
-    "- Possible Prisoners: Up to 100\n"
-    "- Possible Patients: Up to 100\n"
-    "- Transport Probability: 80%\n"
-    "- Hospital Department: General Internal\n"
-    "- Critical Care Quote: 0"
-)
+RULES_TEXT = """
+Possible Prisoners: Up to 100
+Possible Patients: Up to 100
+Transport Probability: 80%
+Hospital Department: General Internal
+Critical Care Quote: 0
+"""
