@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ======================
-# CONFIG
+# CONFIG (NO config.py ANYMORE)
 # ======================
 TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = 1515313354992914469
@@ -67,7 +67,7 @@ SCENARIOS = [
 ]
 
 # ======================
-# STATE STORAGE
+# STATE (prevents duplicates)
 # ======================
 
 STATE_FILE = "state.json"
@@ -90,7 +90,7 @@ def get_channel():
     return bot.get_channel(CHANNEL_ID)
 
 # ======================
-# MESSAGE BUILDERS
+# MESSAGES
 # ======================
 
 def alliance_event():
@@ -110,7 +110,7 @@ Location: {random.choice(UK_LOCATIONS)}
 """
 
 # ======================
-# BUTTONS (CRITICAL PART)
+# BUTTONS (THIS IS CRITICAL)
 # ======================
 
 class EventView(discord.ui.View):
@@ -141,21 +141,19 @@ class EventView(discord.ui.View):
 
 @tasks.loop(minutes=1)
 async def daily_alliance():
-
     now = datetime.now(UK_TZ)
     state = load_state()
 
     today = now.strftime("%Y-%m-%d")
 
     if now.hour == 12 and now.minute == 0:
-
         if state["last_daily"] != today:
 
             ch = get_channel()
             if ch:
                 await ch.send(
                     alliance_event(),
-                    view=EventView()   # ✅ BUTTONS ATTACHED
+                    view=EventView()
                 )
 
             state["last_daily"] = today
@@ -167,7 +165,6 @@ async def daily_alliance():
 
 @tasks.loop(minutes=5)
 async def weekly_lsm():
-
     state = load_state()
     now = datetime.now(UK_TZ).timestamp()
 
@@ -177,7 +174,7 @@ async def weekly_lsm():
         if ch:
             await ch.send(
                 lsm_event(),
-                view=EventView()   # ✅ BUTTONS ATTACHED
+                view=EventView()
             )
 
         state["last_weekly"] = now
@@ -211,7 +208,7 @@ async def mission(ctx):
 async def on_ready():
     print(f"Logged in as {bot.user}")
 
-    # REQUIRED for persistent buttons
+    # REQUIRED for buttons to persist
     bot.add_view(EventView())
 
     if not daily_alliance.is_running():
