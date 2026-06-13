@@ -1,10 +1,9 @@
 import discord
 from discord.ext import commands
-import random
 import os
 import json
+import random
 from datetime import datetime
-import pytz
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,7 +15,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = 1515313354992914469
 
 if not TOKEN:
-    raise Exception("Missing DISCORD_TOKEN in .env")
+    raise Exception("Missing DISCORD_TOKEN")
 
 # ======================
 # BOT SETUP
@@ -26,25 +25,32 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-UK_TZ = pytz.timezone("Europe/London")
-
 # ======================
 # COOLDOWNS
 # ======================
 COOLDOWN_FILE = "cooldowns.json"
 
-ONE_DAY = 86400
-ONE_WEEK = 604800
+ALLIANCE_CD = 60 * 60 * 24      # 24 hours
+LSM_CD = 60 * 60 * 24 * 7       # 7 days
 
 
-def load_cd():
+def load_cooldowns():
     if not os.path.exists(COOLDOWN_FILE):
         return {"alliance": 0, "lsm": 0}
-    with open(COOLDOWN_FILE, "r") as f:
-        return json.load(f)
+
+    try:
+        with open(COOLDOWN_FILE, "r") as f:
+            data = json.load(f)
+    except:
+        data = {"alliance": 0, "lsm": 0}
+
+    data.setdefault("alliance", 0)
+    data.setdefault("lsm", 0)
+
+    return data
 
 
-def save_cd(data):
+def save_cooldowns(data):
     with open(COOLDOWN_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
@@ -52,9 +58,9 @@ def save_cd(data):
 # DATA
 # ======================
 UK_LOCATIONS = [
-    "London","Birmingham","Manchester","Liverpool","Leeds",
-    "Sheffield","Bristol","Nottingham","Newcastle","Glasgow",
-    "Cardiff","Belfast"
+    "London", "Birmingham", "Manchester", "Liverpool", "Leeds",
+    "Sheffield", "Bristol", "Nottingham", "Newcastle", "Glasgow",
+    "Cardiff", "Belfast"
 ]
 
 SCENARIOS = [
@@ -77,9 +83,9 @@ LSM_TYPES = [
 ]
 
 # ======================
-# EVENTS
+# EVENT GENERATORS
 # ======================
-def alliance_event():
+def make_alliance_event():
     return f"""🚨 ALLIANCE EVENT 🚨
 
 Scenario: {random.choice(SCENARIOS)}
@@ -89,78 +95,82 @@ Status: Ready for deployment.
 """
 
 
-def lsm_event():
+def make_lsm_event():
     return f"""🌪️ LSM EVENT 🌪️
 
 Type: {random.choice(LSM_TYPES)}
 Location: {random.choice(UK_LOCATIONS)}
 
-Status: Major scale mobilisation required.
+Status: Major mobilisation required.
 """
 
 # ======================
-# BUTTONS
+# VIEW (BUTTONS)
 # ======================
 class EventView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
+    # ----------------------
+    # ALLIANCE BUTTON
+    # ----------------------
     @discord.ui.button(label="Alliance Event", style=discord.ButtonStyle.green)
-    async def alliance_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def alliance(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        data = load_cd()
+        data = load_cooldowns()
         now = datetime.now().timestamp()
 
-        remaining = ONE_DAY - (now - data["alliance"])
+        remaining = ALLIANCE_CD - (now - data["alliance"])
 
-        if remaining > 0:
+        if data["alliance"] != 0 and remaining > 0:
             h = int(remaining // 3600)
             m = int((remaining % 3600) // 60)
+
             return await interaction.response.send_message(
                 f"⏳ Alliance cooldown: **{h}h {m}m remaining**",
                 ephemeral=True
             )
 
         data["alliance"] = now
-        save_cd(data)
+        save_cooldowns(data)
 
-        await interaction.response.send_message(alliance_event(), ephemeral=True)
+        await interaction.response.send_message(make_alliance_event(), ephemeral=True)
 
+    # ----------------------
+    # LSM BUTTON
+    # ----------------------
     @discord.ui.button(label="LSM Event", style=discord.ButtonStyle.red)
-    async def lsm_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def lsm(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        data = load_cd()
+        data = load_cooldowns()
         now = datetime.now().timestamp()
 
-        remaining = ONE_WEEK - (now - data["lsm"])
+        remaining = LSM_CD - (now - data["lsm"])
 
-        if remaining > 0:
+        if data["lsm"] != 0 and remaining > 0:
             d = int(remaining // 86400)
             h = int((remaining % 86400) // 3600)
+
             return await interaction.response.send_message(
                 f"⏳ LSM cooldown: **{d}d {h}h remaining**",
                 ephemeral=True
             )
 
         data["lsm"] = now
-        save_cd(data)
+        save_cooldowns(data)
 
-        await interaction.response.send_message(lsm_event(), ephemeral=True)
+        await interaction.response.send_message(make_lsm_event(), ephemeral=True)
 
 # ======================
 # COMMANDS
 # ======================
 @bot.command()
+async def panel(ctx):
+    await ctx.send("🎛️ Event Control Panel", view=EventView())
+
+@bot.command()
 async def test(ctx):
-    await ctx.send("Event Panel:", view=EventView())
-
-@bot.command()
-async def alliance(ctx):
-    await ctx.send(alliance_event(), view=EventView())
-
-@bot.command()
-async def lsm(ctx):
-    await ctx.send(lsm_event(), view=EventView())
+    await ctx.send("Testing buttons:", view=EventView())
 
 # ======================
 # STARTUP
