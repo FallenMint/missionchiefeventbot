@@ -16,7 +16,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = 1515313354992914469
 
 if not TOKEN:
-    raise Exception("Missing DISCORD_TOKEN")
+    raise Exception("Missing DISCORD_TOKEN in .env")
 
 # ======================
 # BOT SETUP
@@ -86,11 +86,11 @@ def save_state(data):
 # HELPERS
 # ======================
 
-def channel():
+def get_channel():
     return bot.get_channel(CHANNEL_ID)
 
 # ======================
-# GENERATORS
+# MESSAGE BUILDERS
 # ======================
 
 def alliance_event():
@@ -110,7 +110,7 @@ Location: {random.choice(UK_LOCATIONS)}
 """
 
 # ======================
-# BUTTON SYSTEM (FIXED)
+# BUTTONS (CRITICAL PART)
 # ======================
 
 class EventView(discord.ui.View):
@@ -123,12 +123,8 @@ class EventView(discord.ui.View):
         emoji="🚨",
         custom_id="alliance_btn"
     )
-    async def alliance_button(self, interaction, button):
-
-        await interaction.response.send_message(
-            alliance_event(),
-            ephemeral=True
-        )
+    async def alliance_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(alliance_event(), ephemeral=True)
 
     @discord.ui.button(
         label="LSM Event",
@@ -136,15 +132,11 @@ class EventView(discord.ui.View):
         emoji="🌪️",
         custom_id="lsm_btn"
     )
-    async def lsm_button(self, interaction, button):
-
-        await interaction.response.send_message(
-            lsm_event(),
-            ephemeral=True
-        )
+    async def lsm_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(lsm_event(), ephemeral=True)
 
 # ======================
-# DAILY ALLIANCE (RELIABLE)
+# DAILY ALLIANCE (12:00 UK)
 # ======================
 
 @tasks.loop(minutes=1)
@@ -156,17 +148,21 @@ async def daily_alliance():
     today = now.strftime("%Y-%m-%d")
 
     if now.hour == 12 and now.minute == 0:
+
         if state["last_daily"] != today:
 
-            ch = channel()
+            ch = get_channel()
             if ch:
-                await ch.send(alliance_event())
+                await ch.send(
+                    alliance_event(),
+                    view=EventView()   # ✅ BUTTONS ATTACHED
+                )
 
             state["last_daily"] = today
             save_state(state)
 
 # ======================
-# WEEKLY LSM (RELIABLE)
+# WEEKLY LSM (7 DAY CYCLE)
 # ======================
 
 @tasks.loop(minutes=5)
@@ -177,9 +173,12 @@ async def weekly_lsm():
 
     if now - state["last_weekly"] >= 7 * 86400:
 
-        ch = channel()
+        ch = get_channel()
         if ch:
-            await ch.send(lsm_event())
+            await ch.send(
+                lsm_event(),
+                view=EventView()   # ✅ BUTTONS ATTACHED
+            )
 
         state["last_weekly"] = now
         save_state(state)
@@ -190,11 +189,11 @@ async def weekly_lsm():
 
 @bot.command()
 async def alliance(ctx):
-    await ctx.send(alliance_event())
+    await ctx.send(alliance_event(), view=EventView())
 
 @bot.command()
 async def lsm(ctx):
-    await ctx.send(lsm_event())
+    await ctx.send(lsm_event(), view=EventView())
 
 @bot.command()
 async def event(ctx):
@@ -205,15 +204,14 @@ async def mission(ctx):
     await ctx.send(f"🚨 MISSION\n\nScenario: {random.choice(SCENARIOS)}")
 
 # ======================
-# STARTUP (IMPORTANT FIX HERE)
+# STARTUP
 # ======================
 
 @bot.event
 async def on_ready():
-
     print(f"Logged in as {bot.user}")
 
-    # 🔥 THIS FIXES YOUR BUTTON ISSUE
+    # REQUIRED for persistent buttons
     bot.add_view(EventView())
 
     if not daily_alliance.is_running():
