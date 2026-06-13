@@ -29,29 +29,33 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 UK_TZ = pytz.timezone("Europe/London")
 
 # ======================
+# COOLDOWNS
+# ======================
+COOLDOWN_FILE = "cooldowns.json"
+
+ONE_DAY = 86400
+ONE_WEEK = 604800
+
+
+def load_cooldowns():
+    if not os.path.exists(COOLDOWN_FILE):
+        return {"alliance": 0, "lsm": 0}
+    with open(COOLDOWN_FILE, "r") as f:
+        return json.load(f)
+
+
+def save_cooldowns(data):
+    with open(COOLDOWN_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+
+# ======================
 # DATA
 # ======================
 UK_LOCATIONS = [
-    "London","Birmingham","Manchester","Liverpool","Leeds",
-    "Sheffield","Bristol","Nottingham","Newcastle","Glasgow",
-    "Cardiff","Belfast"
-]
-
-EVENTS = [
-    "Section 60",
-    "Pandemic",
-    "Autumn Weather",
-    "Spring Weather",
-    "Summer Weather",
-    "Sport Weather"
-]
-
-LSM_TYPES = [
-    "Mass Casualty Response",
-    "Large Scale Fire Incident",
-    "Multi-Vehicle Pileup",
-    "Citywide Emergency",
-    "Major Infrastructure Failure"
+    "London", "Birmingham", "Manchester", "Liverpool", "Leeds",
+    "Sheffield", "Bristol", "Nottingham", "Newcastle", "Glasgow",
+    "Cardiff", "Belfast"
 ]
 
 SCENARIOS = [
@@ -65,11 +69,14 @@ SCENARIOS = [
     "Aircraft Crash"
 ]
 
-# ======================
-# CHANNEL
-# ======================
-def get_channel():
-    return bot.get_channel(CHANNEL_ID)
+LSM_TYPES = [
+    "Mass Casualty Response",
+    "Large Scale Fire Incident",
+    "Multi-Vehicle Pileup",
+    "Citywide Emergency",
+    "Major Infrastructure Failure"
+]
+
 
 # ======================
 # MESSAGES
@@ -83,6 +90,7 @@ Location: {random.choice(UK_LOCATIONS)}
 Prepare for activation.
 """
 
+
 def lsm_event():
     return f"""🌪️ LSM EVENT 🌪️
 
@@ -90,8 +98,9 @@ Type: {random.choice(LSM_TYPES)}
 Location: {random.choice(UK_LOCATIONS)}
 """
 
+
 # ======================
-# BUTTONS (FIXED + PERSISTENT)
+# BUTTON VIEW
 # ======================
 class EventView(discord.ui.View):
     def __init__(self):
@@ -103,6 +112,24 @@ class EventView(discord.ui.View):
         custom_id="alliance_button"
     )
     async def alliance_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        data = load_cooldowns()
+        now = datetime.now().timestamp()
+
+        remaining = ONE_DAY - (now - data["alliance"])
+
+        if remaining > 0:
+            h = int(remaining // 3600)
+            m = int((remaining % 3600) // 60)
+
+            return await interaction.response.send_message(
+                f"⏳ Alliance cooldown active: **{h}h {m}m remaining**",
+                ephemeral=True
+            )
+
+        data["alliance"] = now
+        save_cooldowns(data)
+
         await interaction.response.send_message(alliance_event(), ephemeral=True)
 
     @discord.ui.button(
@@ -111,52 +138,44 @@ class EventView(discord.ui.View):
         custom_id="lsm_button"
     )
     async def lsm_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        data = load_cooldowns()
+        now = datetime.now().timestamp()
+
+        remaining = ONE_WEEK - (now - data["lsm"])
+
+        if remaining > 0:
+            d = int(remaining // 86400)
+            h = int((remaining % 86400) // 3600)
+
+            return await interaction.response.send_message(
+                f"⏳ LSM cooldown active: **{d}d {h}h remaining**",
+                ephemeral=True
+            )
+
+        data["lsm"] = now
+        save_cooldowns(data)
+
         await interaction.response.send_message(lsm_event(), ephemeral=True)
 
-# ======================
-# DAILY EVENT (12:00 UK)
-# ======================
-@tasks.loop(minutes=1)
-async def daily_task():
-    now = datetime.now(UK_TZ)
-
-    if now.hour == 12 and now.minute == 0:
-        ch = get_channel()
-        if ch:
-            await ch.send(alliance_event(), view=EventView())
-
-# ======================
-# WEEKLY EVENT (7 DAYS)
-# ======================
-@tasks.loop(minutes=5)
-async def weekly_task():
-    now = datetime.now(UK_TZ).timestamp()
-
-    # simple weekly timer (7 days)
-    if not hasattr(weekly_task, "last"):
-        weekly_task.last = 0
-
-    if now - weekly_task.last > 604800:
-        ch = get_channel()
-        if ch:
-            await ch.send(lsm_event(), view=EventView())
-
-        weekly_task.last = now
 
 # ======================
 # COMMANDS
 # ======================
 @bot.command()
+async def test(ctx):
+    await ctx.send("Event Panel:", view=EventView())
+
+
+@bot.command()
 async def alliance(ctx):
     await ctx.send(alliance_event(), view=EventView())
+
 
 @bot.command()
 async def lsm(ctx):
     await ctx.send(lsm_event(), view=EventView())
 
-@bot.command()
-async def test(ctx):
-    await ctx.send("Buttons test below:", view=EventView())
 
 # ======================
 # STARTUP
@@ -165,14 +184,9 @@ async def test(ctx):
 async def on_ready():
     print(f"Logged in as {bot.user}")
 
-    # REQUIRED for buttons to appear on restart
+    # keeps buttons working after restart
     bot.add_view(EventView())
 
-    if not daily_task.is_running():
-        daily_task.start()
-
-    if not weekly_task.is_running():
-        weekly_task.start()
 
 # ======================
 # RUN
