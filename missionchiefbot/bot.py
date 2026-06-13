@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 import random
 import os
 import json
@@ -37,25 +37,24 @@ ONE_DAY = 86400
 ONE_WEEK = 604800
 
 
-def load_cooldowns():
+def load_cd():
     if not os.path.exists(COOLDOWN_FILE):
         return {"alliance": 0, "lsm": 0}
     with open(COOLDOWN_FILE, "r") as f:
         return json.load(f)
 
 
-def save_cooldowns(data):
+def save_cd(data):
     with open(COOLDOWN_FILE, "w") as f:
         json.dump(data, f, indent=4)
-
 
 # ======================
 # DATA
 # ======================
 UK_LOCATIONS = [
-    "London", "Birmingham", "Manchester", "Liverpool", "Leeds",
-    "Sheffield", "Bristol", "Nottingham", "Newcastle", "Glasgow",
-    "Cardiff", "Belfast"
+    "London","Birmingham","Manchester","Liverpool","Leeds",
+    "Sheffield","Bristol","Nottingham","Newcastle","Glasgow",
+    "Cardiff","Belfast"
 ]
 
 SCENARIOS = [
@@ -77,9 +76,8 @@ LSM_TYPES = [
     "Major Infrastructure Failure"
 ]
 
-
 # ======================
-# MESSAGES
+# EVENTS
 # ======================
 def alliance_event():
     return f"""🚨 ALLIANCE EVENT 🚨
@@ -87,7 +85,7 @@ def alliance_event():
 Scenario: {random.choice(SCENARIOS)}
 Location: {random.choice(UK_LOCATIONS)}
 
-Prepare for activation.
+Status: Ready for deployment.
 """
 
 
@@ -96,24 +94,21 @@ def lsm_event():
 
 Type: {random.choice(LSM_TYPES)}
 Location: {random.choice(UK_LOCATIONS)}
+
+Status: Major scale mobilisation required.
 """
 
-
 # ======================
-# BUTTON VIEW
+# BUTTONS
 # ======================
 class EventView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(
-        label="Alliance Event",
-        style=discord.ButtonStyle.green,
-        custom_id="alliance_button"
-    )
+    @discord.ui.button(label="Alliance Event", style=discord.ButtonStyle.green)
     async def alliance_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        data = load_cooldowns()
+        data = load_cd()
         now = datetime.now().timestamp()
 
         remaining = ONE_DAY - (now - data["alliance"])
@@ -121,25 +116,20 @@ class EventView(discord.ui.View):
         if remaining > 0:
             h = int(remaining // 3600)
             m = int((remaining % 3600) // 60)
-
             return await interaction.response.send_message(
-                f"⏳ Alliance cooldown active: **{h}h {m}m remaining**",
+                f"⏳ Alliance cooldown: **{h}h {m}m remaining**",
                 ephemeral=True
             )
 
         data["alliance"] = now
-        save_cooldowns(data)
+        save_cd(data)
 
         await interaction.response.send_message(alliance_event(), ephemeral=True)
 
-    @discord.ui.button(
-        label="LSM Event",
-        style=discord.ButtonStyle.red,
-        custom_id="lsm_button"
-    )
+    @discord.ui.button(label="LSM Event", style=discord.ButtonStyle.red)
     async def lsm_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        data = load_cooldowns()
+        data = load_cd()
         now = datetime.now().timestamp()
 
         remaining = ONE_WEEK - (now - data["lsm"])
@@ -147,17 +137,15 @@ class EventView(discord.ui.View):
         if remaining > 0:
             d = int(remaining // 86400)
             h = int((remaining % 86400) // 3600)
-
             return await interaction.response.send_message(
-                f"⏳ LSM cooldown active: **{d}d {h}h remaining**",
+                f"⏳ LSM cooldown: **{d}d {h}h remaining**",
                 ephemeral=True
             )
 
         data["lsm"] = now
-        save_cooldowns(data)
+        save_cd(data)
 
         await interaction.response.send_message(lsm_event(), ephemeral=True)
-
 
 # ======================
 # COMMANDS
@@ -166,16 +154,13 @@ class EventView(discord.ui.View):
 async def test(ctx):
     await ctx.send("Event Panel:", view=EventView())
 
-
 @bot.command()
 async def alliance(ctx):
     await ctx.send(alliance_event(), view=EventView())
 
-
 @bot.command()
 async def lsm(ctx):
     await ctx.send(lsm_event(), view=EventView())
-
 
 # ======================
 # STARTUP
@@ -186,7 +171,6 @@ async def on_ready():
 
     # keeps buttons working after restart
     bot.add_view(EventView())
-
 
 # ======================
 # RUN
