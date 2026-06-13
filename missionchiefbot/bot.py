@@ -16,7 +16,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = 1515313354992914469
 
 if not TOKEN:
-    raise Exception("Missing DISCORD_TOKEN in .env")
+    raise Exception("Missing DISCORD_TOKEN")
 
 # ======================
 # BOT SETUP
@@ -66,47 +66,43 @@ SCENARIOS = [
     "Aircraft Crash"
 ]
 
-MISSION_SUMMARIES = {
-    "Motorway Collision": "Multi-vehicle motorway collision with trapped casualties.",
-    "High Rise Fire": "High-rise building fire requiring evacuation.",
-    "Chemical Leak": "Hazardous chemical leak at industrial site.",
-    "Train Derailment": "Passenger train derailment with casualties.",
-    "Stadium Incident": "Major incident at large public event.",
-    "Warehouse Fire": "Large warehouse fire spreading rapidly.",
-    "Flood Rescue": "Severe flooding requiring evacuations.",
-    "Aircraft Crash": "Aircraft crash with multi-agency response."
-}
+# ======================
+# STATE STORAGE
+# ======================
+
+STATE_FILE = "state.json"
+
+def load_state():
+    if not os.path.exists(STATE_FILE):
+        return {"last_daily": "", "last_weekly": 0}
+    with open(STATE_FILE, "r") as f:
+        return json.load(f)
+
+def save_state(data):
+    with open(STATE_FILE, "w") as f:
+        json.dump(data, f, indent=4)
 
 # ======================
 # HELPERS
 # ======================
 
-def get_channel():
+def channel():
     return bot.get_channel(CHANNEL_ID)
 
 # ======================
 # GENERATORS
 # ======================
 
-def mission():
-    s = random.choice(SCENARIOS)
-    return f"""🚨 MISSION ALERT 🚨
+def alliance_event():
+    return f"""🚨 ALLIANCE EVENT 🚨
 
-Scenario: {s}
+Scenario: {random.choice(SCENARIOS)}
 Location: {random.choice(UK_LOCATIONS)}
 
-Summary:
-{MISSION_SUMMARIES[s]}
+Prepare for activation.
 """
 
-def event():
-    return f"""🌍 EVENT ALERT 🌍
-
-Type: {random.choice(EVENTS)}
-Location: {random.choice(UK_LOCATIONS)}
-"""
-
-def lsm():
+def lsm_event():
     return f"""🌪️ LSM EVENT 🌪️
 
 Type: {random.choice(LSM_TYPES)}
@@ -114,69 +110,111 @@ Location: {random.choice(UK_LOCATIONS)}
 """
 
 # ======================
-# AUTOMATION
+# BUTTON SYSTEM (FIXED)
+# ======================
+
+class EventView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(
+        label="Alliance Event",
+        style=discord.ButtonStyle.green,
+        emoji="🚨",
+        custom_id="alliance_btn"
+    )
+    async def alliance_button(self, interaction, button):
+
+        await interaction.response.send_message(
+            alliance_event(),
+            ephemeral=True
+        )
+
+    @discord.ui.button(
+        label="LSM Event",
+        style=discord.ButtonStyle.red,
+        emoji="🌪️",
+        custom_id="lsm_btn"
+    )
+    async def lsm_button(self, interaction, button):
+
+        await interaction.response.send_message(
+            lsm_event(),
+            ephemeral=True
+        )
+
+# ======================
+# DAILY ALLIANCE (RELIABLE)
 # ======================
 
 @tasks.loop(minutes=1)
 async def daily_alliance():
 
     now = datetime.now(UK_TZ)
+    state = load_state()
+
+    today = now.strftime("%Y-%m-%d")
 
     if now.hour == 12 and now.minute == 0:
-        channel = get_channel()
-        if channel:
-            s = random.choice(SCENARIOS)
-            await channel.send(f"""🚨 ALLIANCE EVENT 🚨
+        if state["last_daily"] != today:
 
-Scenario: {s}
-Location: {random.choice(UK_LOCATIONS)}
+            ch = channel()
+            if ch:
+                await ch.send(alliance_event())
 
-Prepare for activation.
-""")
+            state["last_daily"] = today
+            save_state(state)
+
+# ======================
+# WEEKLY LSM (RELIABLE)
+# ======================
 
 @tasks.loop(minutes=5)
 async def weekly_lsm():
 
-    now = datetime.now(UK_TZ)
+    state = load_state()
+    now = datetime.now(UK_TZ).timestamp()
 
-    # Simple weekly trigger (same weekday/time logic optional upgrade later)
-    if now.weekday() == 6 and now.hour == 18 and now.minute < 5:
-        channel = get_channel()
-        if channel:
-            await channel.send(lsm())
+    if now - state["last_weekly"] >= 7 * 86400:
+
+        ch = channel()
+        if ch:
+            await ch.send(lsm_event())
+
+        state["last_weekly"] = now
+        save_state(state)
 
 # ======================
 # COMMANDS
 # ======================
 
 @bot.command()
-async def mission(ctx):
-    await ctx.send(mission())
+async def alliance(ctx):
+    await ctx.send(alliance_event())
+
+@bot.command()
+async def lsm(ctx):
+    await ctx.send(lsm_event())
 
 @bot.command()
 async def event(ctx):
-    await ctx.send(event())
+    await ctx.send(f"🌍 EVENT\n\nLocation: {random.choice(UK_LOCATIONS)}")
 
 @bot.command()
-async def lsm_cmd(ctx):
-    await ctx.send(lsm())
-
-@bot.command()
-async def alliance(ctx):
-    s = random.choice(SCENARIOS)
-    await ctx.send(f"""🚨 ALLIANCE EVENT (MANUAL) 🚨
-
-Scenario: {s}
-Location: {random.choice(UK_LOCATIONS)}
-""")
+async def mission(ctx):
+    await ctx.send(f"🚨 MISSION\n\nScenario: {random.choice(SCENARIOS)}")
 
 # ======================
-# STARTUP
+# STARTUP (IMPORTANT FIX HERE)
 # ======================
 
 @bot.event
 async def on_ready():
+
     print(f"Logged in as {bot.user}")
+
+    # 🔥 THIS FIXES YOUR BUTTON ISSUE
+    bot.add_view(EventView())
 
     if not daily_alliance.is_running():
         daily_alliance.start()
