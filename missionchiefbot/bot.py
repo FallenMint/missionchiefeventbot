@@ -3,7 +3,7 @@ from discord.ext import commands, tasks
 import random
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 import pytz
 from dotenv import load_dotenv
 
@@ -13,8 +13,7 @@ load_dotenv()
 # CONFIG
 # ======================
 TOKEN = os.getenv("DISCORD_TOKEN")
-
-COOLDOWN_CHANNEL_ID = 1515313354992914469
+CHANNEL_ID = 1515313354992914469
 
 if not TOKEN:
     raise Exception("Missing DISCORD_TOKEN in .env")
@@ -79,47 +78,43 @@ MISSION_SUMMARIES = {
 }
 
 # ======================
-# WEEKLY STORAGE
+# HELPERS
 # ======================
 
-WEEKLY_FILE = "weekly.json"
-
-
-def load_weekly():
-    if not os.path.exists(WEEKLY_FILE):
-        return {"last": 0}
-    with open(WEEKLY_FILE, "r") as f:
-        return json.load(f)
-
-
-def save_weekly(data):
-    with open(WEEKLY_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+def get_channel():
+    return bot.get_channel(CHANNEL_ID)
 
 # ======================
 # GENERATORS
 # ======================
 
-def generate_mission():
-    scenario = random.choice(SCENARIOS)
+def mission():
+    s = random.choice(SCENARIOS)
     return f"""🚨 MISSION ALERT 🚨
 
-Scenario: {scenario}
+Scenario: {s}
 Location: {random.choice(UK_LOCATIONS)}
 
 Summary:
-{MISSION_SUMMARIES[scenario]}
+{MISSION_SUMMARIES[s]}
 """
 
-def generate_event():
+def event():
     return f"""🌍 EVENT ALERT 🌍
 
 Type: {random.choice(EVENTS)}
 Location: {random.choice(UK_LOCATIONS)}
 """
 
+def lsm():
+    return f"""🌪️ LSM EVENT 🌪️
+
+Type: {random.choice(LSM_TYPES)}
+Location: {random.choice(UK_LOCATIONS)}
+"""
+
 # ======================
-# DAILY ALLIANCE TASK
+# AUTOMATION
 # ======================
 
 @tasks.loop(minutes=1)
@@ -127,68 +122,53 @@ async def daily_alliance():
 
     now = datetime.now(UK_TZ)
 
-    # 12:00 UK time
     if now.hour == 12 and now.minute == 0:
+        channel = get_channel()
+        if channel:
+            s = random.choice(SCENARIOS)
+            await channel.send(f"""🚨 ALLIANCE EVENT 🚨
 
-        channel = bot.get_channel(COOLDOWN_CHANNEL_ID)
-        if not channel:
-            return
-
-        scenario = random.choice(SCENARIOS)
-
-        await channel.send(f"""🚨 DAILY ALLIANCE EVENT 🚨
-
-Scenario: {scenario}
+Scenario: {s}
 Location: {random.choice(UK_LOCATIONS)}
 
-Prepare units for activation.
+Prepare for activation.
 """)
 
-# ======================
-# WEEKLY LSM / EVENT TASK
-# ======================
-
 @tasks.loop(minutes=5)
-async def weekly_event():
+async def weekly_lsm():
 
-    data = load_weekly()
-    now = datetime.now(UK_TZ).timestamp()
+    now = datetime.now(UK_TZ)
 
-    if now - data["last"] >= 7 * 86400:
-
-        channel = bot.get_channel(COOLDOWN_CHANNEL_ID)
-        if not channel:
-            return
-
-        if random.choice([True, False]):
-            content = f"""🌪️ WEEKLY LSM EVENT 🌪️
-
-Type: {random.choice(LSM_TYPES)}
-Location: {random.choice(UK_LOCATIONS)}
-"""
-        else:
-            content = f"""🚨 WEEKLY EVENT 🚨
-
-Type: {random.choice(EVENTS)}
-Location: {random.choice(UK_LOCATIONS)}
-"""
-
-        await channel.send(content)
-
-        data["last"] = now
-        save_weekly(data)
+    # Simple weekly trigger (same weekday/time logic optional upgrade later)
+    if now.weekday() == 6 and now.hour == 18 and now.minute < 5:
+        channel = get_channel()
+        if channel:
+            await channel.send(lsm())
 
 # ======================
 # COMMANDS
 # ======================
 
 @bot.command()
-async def test(ctx):
-    await ctx.send(generate_mission())
+async def mission(ctx):
+    await ctx.send(mission())
 
 @bot.command()
-async def testevent(ctx):
-    await ctx.send(generate_event())
+async def event(ctx):
+    await ctx.send(event())
+
+@bot.command()
+async def lsm_cmd(ctx):
+    await ctx.send(lsm())
+
+@bot.command()
+async def alliance(ctx):
+    s = random.choice(SCENARIOS)
+    await ctx.send(f"""🚨 ALLIANCE EVENT (MANUAL) 🚨
+
+Scenario: {s}
+Location: {random.choice(UK_LOCATIONS)}
+""")
 
 # ======================
 # STARTUP
@@ -196,14 +176,13 @@ async def testevent(ctx):
 
 @bot.event
 async def on_ready():
-
     print(f"Logged in as {bot.user}")
 
     if not daily_alliance.is_running():
         daily_alliance.start()
 
-    if not weekly_event.is_running():
-        weekly_event.start()
+    if not weekly_lsm.is_running():
+        weekly_lsm.start()
 
 # ======================
 # RUN
