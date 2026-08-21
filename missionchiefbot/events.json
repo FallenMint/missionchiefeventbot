@@ -1,26 +1,14 @@
 {
     "alliance": {
+
         "default": {
-            "name": "Daily Alliance Event",
-            "location": "London",
-            "people": [
-                {
-                    "name": "Fire Engines",
-                    "location": "London"
-                },
-                {
-                    "name": "Police Cars",
-                    "location": "London"
-                },
-                {
-                    "name": "Ambulance Control Units",
-                    "location": "London"
-                }
-            ],
-            "instructions": "Deploy the listed units to the event."
+            "name": "Alliance Event",
+            "location": "Not Set",
+            "people": [],
+            "instructions": ""
         },
 
-        "2026-08-21": {
+        "2026-08-22": {
             "name": "Storm Response",
             "location": "Birmingham",
             "people": [
@@ -29,10 +17,6 @@
                     "location": "Birmingham"
                 },
                 {
-                    "name": "Aerial Appliance Trucks",
-                    "location": "Birmingham"
-                },
-                {
                     "name": "Police Cars",
                     "location": "Birmingham"
                 },
@@ -41,10 +25,10 @@
                     "location": "Birmingham"
                 }
             ],
-            "instructions": "Use the storm response deployment."
+            "instructions": "Deploy all required resources."
         },
 
-        "2026-08-22": {
+        "2026-08-23": {
             "name": "Section 60",
             "location": "Manchester",
             "people": [
@@ -55,50 +39,126 @@
                 {
                     "name": "Armed Response",
                     "location": "Manchester"
-                },
-                {
-                    "name": "Traffic Cars",
-                    "location": "Manchester"
                 }
             ],
-            "instructions": "Deploy the required police resources."
+            "instructions": "Deploy the required units."
         }
     },
 
     "lsm": {
+
         "default": {
-            "name": "Weekly LSM",
+            "type": "Storm",
+            "name": "Operation Thunder",
+            "missions": [
+                {
+                    "name": "Flood Rescue",
+                    "location": "Birmingham",
+                    "instructions": ""
+                },
+                {
+                    "name": "Major Flooding",
+                    "location": "Manchester",
+                    "instructions": ""
+                },
+                {
+                    "name": "Infrastructure Failure",
+                    "location": "Leeds",
+                    "instructions": ""
+                }
+            ]
+        },
+
+        "2026-W34": {
+            "type": "Storm",
+            "name": "Operation Thunder",
+            "missions": [
+                {
+                    "name": "Flood Rescue",
+                    "location": "Birmingham",
+                    "instructions": ""
+                },
+                {
+                    "name": "Major Flooding",
+                    "location": "Manchester",
+                    "instructions": ""
+                }
+            ]
+        },
+
+        "2026-W35": {
+            "type": "Section 60",
+            "name": "Operation Shield",
+            "missions": [
+                {
+                    "name": "Public Disorder",
+                    "location": "London",
+                    "instructions": ""
+                },
+                {
+                    "name": "Major Police Incident",
+                    "location": "Birmingham",
+                    "instructions": ""
+                }
+            ]
+        },
+
+        "2026-W36": {
+            "type": "Pandemic",
+            "name": "Operation Containment",
             "missions": [
                 {
                     "name": "Mass Casualty Response",
-                    "location": "Birmingham",
-                    "people": [
-                        "Ambulance Control Units",
-                        "Fire Engines",
-                        "Police Cars"
-                    ],
-                    "instructions": "Complete the mass casualty mission."
-                },
-                {
-                    "name": "Large Scale Fire Incident",
                     "location": "Manchester",
-                    "people": [
-                        "Fire Engines",
-                        "Aerial Appliance Trucks",
-                        "Foam Unit"
-                    ],
-                    "instructions": "Complete the large fire mission."
-                },
+                    "instructions": ""
+                }
+            ]
+        },
+
+        "2026-W37": {
+            "type": "Autumn Weather",
+            "name": "Operation Autumn",
+            "missions": [
                 {
-                    "name": "Multi-Vehicle Pileup",
+                    "name": "Severe Weather Response",
                     "location": "Leeds",
-                    "people": [
-                        "Fire Engines",
-                        "Rescue Support",
-                        "Ambulance Control Units",
-                        "Police Cars"
-                    ],
-                    "instructions": "Complete the multi-vehicle incident."
+                    "instructions": ""
+                }
+            ]
+        },
+
+        "2026-W38": {
+            "type": "Spring Weather",
+            "name": "Operation Spring",
+            "missions": [
+                {
+                    "name": "Severe Weather Response",
+                    "location": "Bristol",
+                    "instructions": ""
+                }
+            ]
+        },
+
+        "2026-W39": {
+            "type": "Summer Weather",
+            "name": "Operation Summer",
+            "missions": [
+                {
+                    "name": "Extreme Heat Response",
+                    "location": "London",
+                    "instructions": ""
+                }
+            ]
+        },
+
+        "2026-W40": {
+            "type": "Sports Event",
+            "name": "Operation Stadium",
+            "missions": [
+                {
+                    "name": "Major Sporting Incident",
+                    "location": "Cardiff",
+                    "instructions": ""
                 }
             ]
         }
