@@ -29,21 +29,51 @@ bot = commands.Bot(
 
 
 # ============================================================
-# FILES
+# FILE SETTINGS
 # ============================================================
 
 EVENT_FILE = "events.json"
 
 
 # ============================================================
-# LOAD EVENTS
+# TIME FUNCTIONS
+# ============================================================
+
+def get_now():
+    return datetime.now(
+        ZoneInfo(TIMEZONE)
+    )
+
+
+def get_today():
+    return get_now().strftime(
+        "%Y-%m-%d"
+    )
+
+
+def get_display_date():
+    return get_now().strftime(
+        "%d/%m/%Y"
+    )
+
+
+def get_week():
+    return get_now().strftime(
+        "%Y-W%U"
+    )
+
+
+# ============================================================
+# LOAD EVENT DATA
 # ============================================================
 
 def load_events():
 
     if not os.path.exists(EVENT_FILE):
 
-        print("events.json not found!")
+        print(
+            "ERROR: events.json does not exist."
+        )
 
         return {
             "alliance": {},
@@ -63,45 +93,13 @@ def load_events():
     except Exception as error:
 
         print(
-            f"Failed to load events.json: {error}"
+            f"ERROR loading events.json: {error}"
         )
 
         return {
             "alliance": {},
             "lsm": {}
         }
-
-
-# ============================================================
-# TIME
-# ============================================================
-
-def get_now():
-
-    return datetime.now(
-        ZoneInfo(TIMEZONE)
-    )
-
-
-def get_today():
-
-    return get_now().strftime(
-        "%Y-%m-%d"
-    )
-
-
-def get_display_date():
-
-    return get_now().strftime(
-        "%d/%m/%Y"
-    )
-
-
-def get_week():
-
-    return get_now().strftime(
-        "%Y-W%U"
-    )
 
 
 # ============================================================
@@ -112,34 +110,34 @@ def make_alliance_event():
 
     data = load_events()
 
-    today = get_today()
-
-    alliance_events = data.get(
+    alliance = data.get(
         "alliance",
         {}
     )
 
+    today = get_today()
+
     # --------------------------------------------------------
-    # Look for today's event
+    # Find today's Alliance event
     # --------------------------------------------------------
 
-    event = alliance_events.get(
+    event = alliance.get(
         today
     )
 
     # --------------------------------------------------------
     # If there isn't a specific event for today,
-    # use the default event
+    # use the default event.
     # --------------------------------------------------------
 
     if event is None:
 
-        event = alliance_events.get(
+        event = alliance.get(
             "default"
         )
 
     # --------------------------------------------------------
-    # No event configured
+    # No event found
     # --------------------------------------------------------
 
     if event is None:
@@ -147,12 +145,12 @@ def make_alliance_event():
         return (
             "🚨 **ALLIANCE EVENT** 🚨\n\n"
             f"📅 **Date:** {get_display_date()}\n\n"
-            "❌ No Alliance Event has been configured "
+            "❌ There is no Alliance Event configured "
             "for today."
         )
 
     # --------------------------------------------------------
-    # Event information
+    # Basic event information
     # --------------------------------------------------------
 
     event_name = event.get(
@@ -172,38 +170,38 @@ def make_alliance_event():
 
     message = (
         "🚨 **ALLIANCE EVENT** 🚨\n\n"
-        f"📛 **Event:** {event_name}\n"
+        f"📛 **Event Name:** {event_name}\n"
         f"📅 **Date:** {get_display_date()}\n"
         f"📍 **Location:** {location}\n\n"
-        "👥 **SEND:**\n"
+        "👥 **PEOPLE TO SEND:**\n"
     )
 
     # --------------------------------------------------------
-    # People / units
+    # People
     # --------------------------------------------------------
 
     if not people:
 
         message += (
-            "No people or units have been specified.\n"
+            "No people have been configured.\n"
         )
 
     else:
 
         for person in people:
 
-            name = person.get(
+            person_name = person.get(
                 "name",
                 "Unknown"
             )
 
-            send_location = person.get(
+            person_location = person.get(
                 "location",
                 location
             )
 
             message += (
-                f"• **{name}** → {send_location}\n"
+                f"• **{person_name}** → {person_location}\n"
             )
 
     # --------------------------------------------------------
@@ -224,7 +222,7 @@ def make_alliance_event():
 
     message += (
         "\n━━━━━━━━━━━━━━━━━━━━\n"
-        "✅ Alliance Event information loaded."
+        "✅ Today's Alliance information."
     )
 
     return message
@@ -238,34 +236,34 @@ def make_lsm_event():
 
     data = load_events()
 
-    current_week = get_week()
-
-    lsm_data = data.get(
+    lsm = data.get(
         "lsm",
         {}
     )
 
+    current_week = get_week()
+
     # --------------------------------------------------------
-    # Look for current week
+    # Find this week's LSM
     # --------------------------------------------------------
 
-    event = lsm_data.get(
+    event = lsm.get(
         current_week
     )
 
     # --------------------------------------------------------
-    # If no current week is configured,
-    # use default
+    # If there isn't a specific week,
+    # use the default.
     # --------------------------------------------------------
 
     if event is None:
 
-        event = lsm_data.get(
+        event = lsm.get(
             "default"
         )
 
     # --------------------------------------------------------
-    # No LSM configured
+    # No LSM found
     # --------------------------------------------------------
 
     if event is None:
@@ -273,13 +271,18 @@ def make_lsm_event():
         return (
             "🌪️ **LSM EVENT** 🌪️\n\n"
             f"📅 **Week:** {current_week}\n\n"
-            "❌ No LSM information has been configured "
+            "❌ No LSM has been configured "
             "for this week."
         )
 
     # --------------------------------------------------------
     # Basic information
     # --------------------------------------------------------
+
+    event_type = event.get(
+        "type",
+        "LSM"
+    )
 
     event_name = event.get(
         "name",
@@ -293,9 +296,10 @@ def make_lsm_event():
 
     message = (
         "🌪️ **LSM EVENT** 🌪️\n\n"
-        f"📛 **Event:** {event_name}\n"
+        f"📛 **Event Name:** {event_name}\n"
+        f"📋 **Type:** {event_type}\n"
         f"📅 **Week:** {current_week}\n\n"
-        "📋 **MISSIONS:**\n"
+        "🎯 **MISSIONS:**\n"
     )
 
     # --------------------------------------------------------
@@ -330,30 +334,7 @@ def make_lsm_event():
                 f"📍 **Location:** {location}\n"
             )
 
-            # -----------------------------------------------
-            # Optional people / units
-            # -----------------------------------------------
-
-            people = mission.get(
-                "people",
-                []
-            )
-
-            if people:
-
-                message += (
-                    "👥 **Send:**\n"
-                )
-
-                for person in people:
-
-                    message += (
-                        f"• {person}\n"
-                    )
-
-            # -----------------------------------------------
-            # Optional instructions
-            # -----------------------------------------------
+            # Optional mission instructions
 
             instructions = mission.get(
                 "instructions",
@@ -368,26 +349,23 @@ def make_lsm_event():
 
     message += (
         "\n━━━━━━━━━━━━━━━━━━━━\n"
-        "✅ LSM information loaded."
+        "✅ This week's LSM information."
     )
 
     return message
 
 
 # ============================================================
-# EVENT BUTTONS
+# BUTTON VIEW
 # ============================================================
 
-class EventView(
-    discord.ui.View
-):
+class EventView(discord.ui.View):
 
     def __init__(self):
 
         super().__init__(
             timeout=None
         )
-
 
     # ========================================================
     # ALLIANCE BUTTON
@@ -409,7 +387,6 @@ class EventView(
             make_alliance_event(),
             ephemeral=True
         )
-
 
     # ========================================================
     # LSM BUTTON
@@ -434,7 +411,7 @@ class EventView(
 
 
 # ============================================================
-# SEND DAILY REMINDER
+# DAILY REMINDER
 # ============================================================
 
 async def send_daily_reminder():
@@ -458,7 +435,7 @@ async def send_daily_reminder():
         except Exception as error:
 
             print(
-                f"Could not find channel: {error}"
+                f"ERROR finding channel: {error}"
             )
 
             return
@@ -476,28 +453,28 @@ async def send_daily_reminder():
     except Exception as error:
 
         print(
-            f"Could not find reminder user: {error}"
+            f"ERROR finding reminder user: {error}"
         )
 
         return
 
     # --------------------------------------------------------
-    # Reminder message
+    # Create reminder
     # --------------------------------------------------------
 
     message = (
         f"{user.mention}\n\n"
-        "🔔 **DAILY EVENT REMINDER** 🔔\n\n"
-        "Please check the event information for today.\n\n"
+        "🔔 **EVENT REMINDER** 🔔\n\n"
+        "It's time to check today's events.\n\n"
         "🚨 **Alliance Event**\n"
         "Check today's Alliance deployment.\n\n"
         "🌪️ **LSM**\n"
         "Check this week's LSM missions.\n\n"
-        "👇 Select the event you need below."
+        "👇 **Choose the event you need below.**"
     )
 
     # --------------------------------------------------------
-    # Send message
+    # Send reminder
     # --------------------------------------------------------
 
     await channel.send(
@@ -506,22 +483,19 @@ async def send_daily_reminder():
     )
 
     print(
-        "Daily event reminder sent."
+        f"Daily reminder sent at "
+        f"{get_now().strftime('%d/%m/%Y %H:%M:%S')}"
     )
 
 
 # ============================================================
-# DAILY REMINDER LOOP
+# REMINDER LOOP
 # ============================================================
 
 @tasks.loop(minutes=1)
 async def reminder_loop():
 
     now = get_now()
-
-    # --------------------------------------------------------
-    # Check if it is exactly 12:00
-    # --------------------------------------------------------
 
     if (
         now.hour == REMINDER_HOUR
@@ -533,7 +507,7 @@ async def reminder_loop():
 
 
 # ============================================================
-# COMMAND - PANEL
+# ADMIN COMMAND - PANEL
 # ============================================================
 
 @bot.command()
@@ -543,13 +517,14 @@ async def reminder_loop():
 async def panel(ctx):
 
     await ctx.send(
-        "🎛️ **Event Control Panel**",
+        "🎛️ **Event Control Panel**\n\n"
+        "Choose an event below:",
         view=EventView()
     )
 
 
 # ============================================================
-# COMMAND - TEST
+# ADMIN COMMAND - TEST
 # ============================================================
 
 @bot.command()
@@ -565,7 +540,7 @@ async def test(ctx):
 
 
 # ============================================================
-# COMMAND - ALLIANCE
+# ADMIN COMMAND - ALLIANCE
 # ============================================================
 
 @bot.command()
@@ -580,7 +555,7 @@ async def alliance(ctx):
 
 
 # ============================================================
-# COMMAND - LSM
+# ADMIN COMMAND - LSM
 # ============================================================
 
 @bot.command()
@@ -602,7 +577,7 @@ async def lsm(ctx):
 async def on_ready():
 
     print(
-        "================================="
+        "========================================"
     )
 
     print(
@@ -610,15 +585,16 @@ async def on_ready():
     )
 
     print(
-        f"UK Time: {get_now().strftime('%d/%m/%Y %H:%M:%S')}"
+        f"UK Time: "
+        f"{get_now().strftime('%d/%m/%Y %H:%M:%S')}"
     )
 
     print(
-        "================================="
+        "========================================"
     )
 
     # --------------------------------------------------------
-    # Keep buttons working after restart
+    # Register persistent buttons
     # --------------------------------------------------------
 
     bot.add_view(
@@ -626,7 +602,7 @@ async def on_ready():
     )
 
     # --------------------------------------------------------
-    # Start reminder loop
+    # Start reminder system
     # --------------------------------------------------------
 
     if not reminder_loop.is_running():
@@ -639,7 +615,7 @@ async def on_ready():
 
 
 # ============================================================
-# ERROR HANDLER
+# COMMAND ERROR HANDLER
 # ============================================================
 
 @bot.event
@@ -654,7 +630,8 @@ async def on_command_error(
     ):
 
         await ctx.send(
-            "❌ You do not have permission to use this command.",
+            "❌ You do not have permission "
+            "to use this command.",
             delete_after=5
         )
 
