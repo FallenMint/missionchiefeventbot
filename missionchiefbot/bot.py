@@ -29,14 +29,14 @@ bot = commands.Bot(
 
 
 # ============================================================
-# FILE SETTINGS
+# FILE
 # ============================================================
 
 EVENT_FILE = "events.json"
 
 
 # ============================================================
-# TIME FUNCTIONS
+# TIME
 # ============================================================
 
 def get_now():
@@ -51,29 +51,27 @@ def get_today():
     )
 
 
-def get_display_date():
-    return get_now().strftime(
-        "%d/%m/%Y"
-    )
-
-
 def get_week():
     return get_now().strftime(
         "%Y-W%U"
     )
 
 
+def get_display_date():
+    return get_now().strftime(
+        "%d/%m/%Y"
+    )
+
+
 # ============================================================
-# LOAD EVENT DATA
+# LOAD EVENTS
 # ============================================================
 
 def load_events():
 
     if not os.path.exists(EVENT_FILE):
 
-        print(
-            "ERROR: events.json does not exist."
-        )
+        print("ERROR: events.json not found.")
 
         return {
             "alliance": {},
@@ -118,7 +116,7 @@ def make_alliance_event():
     today = get_today()
 
     # --------------------------------------------------------
-    # Find today's Alliance event
+    # Get today's Alliance event
     # --------------------------------------------------------
 
     event = alliance.get(
@@ -126,8 +124,8 @@ def make_alliance_event():
     )
 
     # --------------------------------------------------------
-    # If there isn't a specific event for today,
-    # use the default event.
+    # If today's event isn't specifically configured,
+    # use the default Alliance event.
     # --------------------------------------------------------
 
     if event is None:
@@ -137,7 +135,7 @@ def make_alliance_event():
         )
 
     # --------------------------------------------------------
-    # No event found
+    # No event
     # --------------------------------------------------------
 
     if event is None:
@@ -145,91 +143,63 @@ def make_alliance_event():
         return (
             "🚨 **ALLIANCE EVENT** 🚨\n\n"
             f"📅 **Date:** {get_display_date()}\n\n"
-            "❌ There is no Alliance Event configured "
+            "❌ No Alliance Event has been configured "
             "for today."
         )
 
     # --------------------------------------------------------
-    # Basic event information
+    # Location
     # --------------------------------------------------------
-
-    event_name = event.get(
-        "name",
-        "Alliance Event"
-    )
 
     location = event.get(
         "location",
         "Not specified"
     )
 
-    people = event.get(
-        "people",
+    # --------------------------------------------------------
+    # Units
+    # --------------------------------------------------------
+
+    units = event.get(
+        "units",
         []
     )
 
+    # --------------------------------------------------------
+    # Build message
+    # --------------------------------------------------------
+
     message = (
         "🚨 **ALLIANCE EVENT** 🚨\n\n"
-        f"📛 **Event Name:** {event_name}\n"
         f"📅 **Date:** {get_display_date()}\n"
         f"📍 **Location:** {location}\n\n"
-        "👥 **PEOPLE TO SEND:**\n"
+        "🚒 **UNITS TO SEND:**\n"
     )
 
-    # --------------------------------------------------------
-    # People
-    # --------------------------------------------------------
-
-    if not people:
+    if not units:
 
         message += (
-            "No people have been configured.\n"
+            "No units have been configured."
         )
 
     else:
 
-        for person in people:
-
-            person_name = person.get(
-                "name",
-                "Unknown"
-            )
-
-            person_location = person.get(
-                "location",
-                location
-            )
+        for unit in units:
 
             message += (
-                f"• **{person_name}** → {person_location}\n"
+                f"• {unit}\n"
             )
-
-    # --------------------------------------------------------
-    # Optional instructions
-    # --------------------------------------------------------
-
-    instructions = event.get(
-        "instructions",
-        ""
-    )
-
-    if instructions:
-
-        message += (
-            "\n📝 **Instructions:**\n"
-            f"{instructions}\n"
-        )
 
     message += (
         "\n━━━━━━━━━━━━━━━━━━━━\n"
-        "✅ Today's Alliance information."
+        "✅ Alliance deployment information."
     )
 
     return message
 
 
 # ============================================================
-# LSM EVENT
+# LSM
 # ============================================================
 
 def make_lsm_event():
@@ -244,7 +214,7 @@ def make_lsm_event():
     current_week = get_week()
 
     # --------------------------------------------------------
-    # Find this week's LSM
+    # Get this week's LSM
     # --------------------------------------------------------
 
     event = lsm.get(
@@ -252,7 +222,7 @@ def make_lsm_event():
     )
 
     # --------------------------------------------------------
-    # If there isn't a specific week,
+    # If this week's LSM isn't specifically configured,
     # use the default.
     # --------------------------------------------------------
 
@@ -263,93 +233,45 @@ def make_lsm_event():
         )
 
     # --------------------------------------------------------
-    # No LSM found
+    # No LSM
     # --------------------------------------------------------
 
     if event is None:
 
         return (
-            "🌪️ **LSM EVENT** 🌪️\n\n"
+            "🌪️ **LSM** 🌪️\n\n"
             f"📅 **Week:** {current_week}\n\n"
             "❌ No LSM has been configured "
             "for this week."
         )
 
     # --------------------------------------------------------
-    # Basic information
+    # LSM TYPE
     # --------------------------------------------------------
 
-    event_type = event.get(
+    lsm_type = event.get(
         "type",
-        "LSM"
+        "Not specified"
     )
 
-    event_name = event.get(
-        "name",
-        "LSM Event"
+    # --------------------------------------------------------
+    # LOCATION
+    # --------------------------------------------------------
+
+    location = event.get(
+        "location",
+        "Not specified"
     )
 
-    missions = event.get(
-        "missions",
-        []
-    )
+    # --------------------------------------------------------
+    # Build message
+    # --------------------------------------------------------
 
     message = (
-        "🌪️ **LSM EVENT** 🌪️\n\n"
-        f"📛 **Event Name:** {event_name}\n"
-        f"📋 **Type:** {event_type}\n"
-        f"📅 **Week:** {current_week}\n\n"
-        "🎯 **MISSIONS:**\n"
-    )
-
-    # --------------------------------------------------------
-    # Missions
-    # --------------------------------------------------------
-
-    if not missions:
-
-        message += (
-            "No missions have been configured.\n"
-        )
-
-    else:
-
-        for number, mission in enumerate(
-            missions,
-            start=1
-        ):
-
-            mission_name = mission.get(
-                "name",
-                "Unknown Mission"
-            )
-
-            location = mission.get(
-                "location",
-                "Not specified"
-            )
-
-            message += (
-                f"\n**{number}. {mission_name}**\n"
-                f"📍 **Location:** {location}\n"
-            )
-
-            # Optional mission instructions
-
-            instructions = mission.get(
-                "instructions",
-                ""
-            )
-
-            if instructions:
-
-                message += (
-                    f"📝 {instructions}\n"
-                )
-
-    message += (
-        "\n━━━━━━━━━━━━━━━━━━━━\n"
-        "✅ This week's LSM information."
+        "🌪️ **LSM** 🌪️\n\n"
+        f"📋 **Type:** {lsm_type}\n"
+        f"📍 **Location:** {location}\n\n"
+        "This is this week's LSM."
     )
 
     return message
@@ -359,7 +281,9 @@ def make_lsm_event():
 # BUTTON VIEW
 # ============================================================
 
-class EventView(discord.ui.View):
+class EventView(
+    discord.ui.View
+):
 
     def __init__(self):
 
@@ -459,22 +383,23 @@ async def send_daily_reminder():
         return
 
     # --------------------------------------------------------
-    # Create reminder
+    # Reminder
     # --------------------------------------------------------
 
     message = (
         f"{user.mention}\n\n"
         "🔔 **EVENT REMINDER** 🔔\n\n"
-        "It's time to check today's events.\n\n"
+        "Please check today's Alliance Event "
+        "and this week's LSM.\n\n"
         "🚨 **Alliance Event**\n"
-        "Check today's Alliance deployment.\n\n"
+        "Daily deployment information.\n\n"
         "🌪️ **LSM**\n"
-        "Check this week's LSM missions.\n\n"
-        "👇 **Choose the event you need below.**"
+        "Weekly LSM information.\n\n"
+        "👇 Select an option below."
     )
 
     # --------------------------------------------------------
-    # Send reminder
+    # Send
     # --------------------------------------------------------
 
     await channel.send(
@@ -483,13 +408,13 @@ async def send_daily_reminder():
     )
 
     print(
-        f"Daily reminder sent at "
+        f"Reminder sent: "
         f"{get_now().strftime('%d/%m/%Y %H:%M:%S')}"
     )
 
 
 # ============================================================
-# REMINDER LOOP
+# DAILY TIMER
 # ============================================================
 
 @tasks.loop(minutes=1)
@@ -507,7 +432,7 @@ async def reminder_loop():
 
 
 # ============================================================
-# ADMIN COMMAND - PANEL
+# PANEL COMMAND
 # ============================================================
 
 @bot.command()
@@ -518,13 +443,13 @@ async def panel(ctx):
 
     await ctx.send(
         "🎛️ **Event Control Panel**\n\n"
-        "Choose an event below:",
+        "Choose an event:",
         view=EventView()
     )
 
 
 # ============================================================
-# ADMIN COMMAND - TEST
+# TEST COMMAND
 # ============================================================
 
 @bot.command()
@@ -540,7 +465,7 @@ async def test(ctx):
 
 
 # ============================================================
-# ADMIN COMMAND - ALLIANCE
+# ALLIANCE COMMAND
 # ============================================================
 
 @bot.command()
@@ -555,7 +480,7 @@ async def alliance(ctx):
 
 
 # ============================================================
-# ADMIN COMMAND - LSM
+# LSM COMMAND
 # ============================================================
 
 @bot.command()
@@ -594,7 +519,7 @@ async def on_ready():
     )
 
     # --------------------------------------------------------
-    # Register persistent buttons
+    # Make buttons work after restart
     # --------------------------------------------------------
 
     bot.add_view(
@@ -602,7 +527,7 @@ async def on_ready():
     )
 
     # --------------------------------------------------------
-    # Start reminder system
+    # Start daily reminder
     # --------------------------------------------------------
 
     if not reminder_loop.is_running():
@@ -615,7 +540,7 @@ async def on_ready():
 
 
 # ============================================================
-# COMMAND ERROR HANDLER
+# ERROR HANDLER
 # ============================================================
 
 @bot.event
@@ -643,7 +568,7 @@ async def on_command_error(
 
 
 # ============================================================
-# START BOT
+# START
 # ============================================================
 
 bot.run(TOKEN)
