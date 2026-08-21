@@ -3,78 +3,57 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# -----------------------
-# REQUIRED SETTINGS
-# -----------------------
-TOKEN = os.getenv("DISCORD_TOKEN")
 
-CHANNEL_ID = os.getenv("CHANNEL_ID")
+# ============================================================
+# DISCORD SETTINGS
+# ============================================================
+
+TOKEN = os.getenv(
+    "DISCORD_TOKEN"
+)
+
+CHANNEL_ID = os.getenv(
+    "CHANNEL_ID"
+)
+
+REMINDER_USER_ID = os.getenv(
+    "REMINDER_USER_ID"
+)
+
 
 if not TOKEN:
-    raise Exception("Missing DISCORD_TOKEN in .env")
+    raise Exception(
+        "Missing DISCORD_TOKEN in .env"
+    )
+
 
 if not CHANNEL_ID:
-    raise Exception("Missing CHANNEL_ID in .env")
+    raise Exception(
+        "Missing CHANNEL_ID in .env"
+    )
 
-CHANNEL_ID = int(CHANNEL_ID)
+
+if not REMINDER_USER_ID:
+    raise Exception(
+        "Missing REMINDER_USER_ID in .env"
+    )
 
 
-# -----------------------
-# CONTENT DATA
-# -----------------------
+CHANNEL_ID = int(
+    CHANNEL_ID
+)
 
-UK_LOCATIONS = [
-    "London",
-    "Birmingham",
-    "Manchester",
-    "Liverpool",
-    "Leeds",
-    "Sheffield",
-    "Bristol",
-    "Nottingham",
-    "Newcastle",
-    "Glasgow",
-    "Cardiff",
-    "Belfast",
-]
+REMINDER_USER_ID = int(
+    REMINDER_USER_ID
+)
 
-EVENTS = [
-    "Storm",
-    "Section 60",
-    "Pandemic",
-    "Autumn Weather",
-    "Spring Weather",
-    "Summer Weather",
-    "Sport Weather",
-]
 
-UNITS = [
-    "Fire Engines",
-    "Aerial Appliance Trucks",
-    "Fire Officers",
-    "Ambulance Control Units",
-    "BSU",
-    "Hazmat",
-    "Rescue Support",
-    "Foam Unit",
-    "Police Cars",
-    "Armed Response",
-    "DSU",
-    "Traffic Cars",
-    "Police Helicopters",
-    "OTL",
-    "PRV",
-    "SRV",
-    "Welfare",
-    "ATV",
-    "Mass Casualty Equipment",
-    "Ambulance Officers",
-]
+# ============================================================
+# TIME SETTINGS
+# ============================================================
 
-RULES_TEXT = """
-Possible Prisoners: Up to 100
-Possible Patients: Up to 100
-Transport Probability: 80%
-Hospital Department: General Internal
-Critical Care Quote: 0
-"""
+TIMEZONE = "Europe/London"
+
+REMINDER_HOUR = 12
+
+REMINDER_MINUTE = 0
