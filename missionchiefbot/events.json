@@ -1,0 +1,106 @@
+{
+    "alliance": {
+        "default": {
+            "name": "Daily Alliance Event",
+            "location": "London",
+            "people": [
+                {
+                    "name": "Fire Engines",
+                    "location": "London"
+                },
+                {
+                    "name": "Police Cars",
+                    "location": "London"
+                },
+                {
+                    "name": "Ambulance Control Units",
+                    "location": "London"
+                }
+            ],
+            "instructions": "Deploy the listed units to the event."
+        },
+
+        "2026-08-21": {
+            "name": "Storm Response",
+            "location": "Birmingham",
+            "people": [
+                {
+                    "name": "Fire Engines",
+                    "location": "Birmingham"
+                },
+                {
+                    "name": "Aerial Appliance Trucks",
+                    "location": "Birmingham"
+                },
+                {
+                    "name": "Police Cars",
+                    "location": "Birmingham"
+                },
+                {
+                    "name": "Ambulance Control Units",
+                    "location": "Birmingham"
+                }
+            ],
+            "instructions": "Use the storm response deployment."
+        },
+
+        "2026-08-22": {
+            "name": "Section 60",
+            "location": "Manchester",
+            "people": [
+                {
+                    "name": "Police Cars",
+                    "location": "Manchester"
+                },
+                {
+                    "name": "Armed Response",
+                    "location": "Manchester"
+                },
+                {
+                    "name": "Traffic Cars",
+                    "location": "Manchester"
+                }
+            ],
+            "instructions": "Deploy the required police resources."
+        }
+    },
+
+    "lsm": {
+        "default": {
+            "name": "Weekly LSM",
+            "missions": [
+                {
+                    "name": "Mass Casualty Response",
+                    "location": "Birmingham",
+                    "people": [
+                        "Ambulance Control Units",
+                        "Fire Engines",
+                        "Police Cars"
+                    ],
+                    "instructions": "Complete the mass casualty mission."
+                },
+                {
+                    "name": "Large Scale Fire Incident",
+                    "location": "Manchester",
+                    "people": [
+                        "Fire Engines",
+                        "Aerial Appliance Trucks",
+                        "Foam Unit"
+                    ],
+                    "instructions": "Complete the large fire mission."
+                },
+                {
+                    "name": "Multi-Vehicle Pileup",
+                    "location": "Leeds",
+                    "people": [
+                        "Fire Engines",
+                        "Rescue Support",
+                        "Ambulance Control Units",
+                        "Police Cars"
+                    ],
+                    "instructions": "Complete the multi-vehicle incident."
+                }
+            ]
+        }
+    }
+}
